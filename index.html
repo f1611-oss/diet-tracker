@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f4f7f5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Daily Log">
+  <title>Daily Log</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">PERSONAL DIET LOG</p>
+      <h1 id="pageTitle">概要</h1>
+    </div>
+    <button class="sync-chip" id="syncChip" type="button" aria-label="同期設定を開く">
+      <span class="status-dot" id="syncDot"></span>
+      <span id="syncChipText">ローカル保存</span>
+    </button>
+  </header>
+
+  <main class="app-main">
+    <section class="page is-active" id="dashboard" data-title="概要">
+      <div class="hero-card">
+        <div>
+          <p class="metric-label">現在体重</p>
+          <p class="hero-value" id="currentWeight">--<span>kg</span></p>
+          <p class="metric-note" id="latestWeightDate">記録待ち</p>
+        </div>
+        <div class="hero-deltas">
+          <div><span>目標まで</span><strong id="targetWeightDiff">--</strong></div>
+          <div><span>初回比</span><strong id="firstWeightDiff">--</strong></div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card">
+          <p class="metric-label">7日平均体重</p>
+          <p class="metric-number" id="avgWeight7">--</p>
+          <p class="metric-note" id="weightChange7">7日変化 --</p>
+        </article>
+        <article class="metric-card">
+          <p class="metric-label">今日の摂取</p>
+          <p class="metric-number" id="todayCalories">--</p>
+          <p class="metric-note" id="calorieTargetNote">kcal</p>
+        </article>
+        <article class="metric-card">
+          <p class="metric-label">今日のP</p>
+          <p class="metric-number" id="todayProtein">--</p>
+          <p class="metric-note" id="proteinTargetNote">g</p>
+        </article>
+        <article class="metric-card">
+          <p class="metric-label">直近7日平均</p>
+          <p class="metric-number compact" id="avgCalories7">-- kcal</p>
+          <p class="metric-note" id="avgProtein7">P -- g</p>
+        </article>
+      </div>
+
+      <article class="card insight-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">TREND NOTE</p>
+            <h2>体重変化の見え方</h2>
+          </div>
+        </div>
+        <p id="trendInsight">記録が増えると、外食・飲酒・むくみとの重なりを表示します。</p>
+      </article>
+
+      <article class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">CHARTS</p>
+            <h2>推移</h2>
+          </div>
+          <div class="segmented" id="chartRange">
+            <button type="button" data-range="7" class="is-active">7日</button>
+            <button type="button" data-range="30">30日</button>
+          </div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title"><span>体重</span><span id="weightChartSummary">--</span></div>
+          <svg class="chart" id="weightChart" role="img" aria-label="体重推移グラフ"></svg>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title"><span>摂取カロリー</span><span id="calorieChartSummary">--</span></div>
+          <svg class="chart" id="calorieChart" role="img" aria-label="摂取カロリー推移グラフ"></svg>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title"><span>タンパク質</span><span id="proteinChartSummary">--</span></div>
+          <svg class="chart" id="proteinChart" role="img" aria-label="タンパク質推移グラフ"></svg>
+        </div>
+      </article>
+    </section>
+
+    <section class="page" id="entry" data-title="記録">
+      <form id="entryForm">
+        <article class="card entry-card">
+          <div class="section-heading entry-heading">
+            <div>
+              <p class="eyebrow" id="entryMode">NEW ENTRY</p>
+              <h2 id="entryTitle">今日の記録</h2>
+            </div>
+            <input class="date-input" type="date" id="date" required>
+          </div>
+
+          <div class="primary-fields">
+            <label class="field">
+              <span>体重 <small>kg</small></span>
+              <input type="number" id="weight" inputmode="decimal" min="20" max="300" step="0.1" placeholder="72.5">
+            </label>
+            <label class="field">
+              <span>摂取カロリー <small>kcal</small></span>
+              <input type="number" id="calories" inputmode="numeric" min="0" max="20000" step="1" placeholder="1800">
+            </label>
+            <label class="field">
+              <span>タンパク質 <small>g</small></span>
+              <input type="number" id="protein" inputmode="decimal" min="0" max="1000" step="0.1" placeholder="120">
+            </label>
+            <label class="field">
+              <span>歩数</span>
+              <input type="number" id="steps" inputmode="numeric" min="0" max="200000" step="1" placeholder="8000">
+            </label>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">MEAL TEMPLATE</p>
+              <h2>よく食べるもの</h2>
+            </div>
+            <button class="text-button" type="button" data-open-settings="templates">編集</button>
+          </div>
+          <div class="template-buttons" id="mealTemplateButtons"></div>
+          <p class="empty-copy" id="templateEmpty">設定で食事テンプレを登録できます。</p>
+        </article>
+
+        <details class="card details-card" id="entryDetails">
+          <summary>
+            <span><b>詳細を開く</b><small>運動・メモ・フラグ</small></span>
+            <span class="chevron">⌄</span>
+          </summary>
+          <div class="details-content">
+            <label class="field">
+              <span>運動</span>
+              <input type="text" id="training" placeholder="ウォーキング30分、筋トレなど">
+            </label>
+            <label class="field">
+              <span>食事メモ</span>
+              <textarea id="meals" rows="3" placeholder="外食内容や、テンプレにない食事"></textarea>
+            </label>
+            <label class="field">
+              <span>体調メモ</span>
+              <textarea id="memo" rows="3" placeholder="睡眠、空腹感、体調など"></textarea>
+            </label>
+            <div class="field-grid">
+              <label class="field">
+                <span>水分 <small>L</small></span>
+                <input type="number" id="water" inputmode="decimal" min="0" max="20" step="0.1" placeholder="2.0">
+              </label>
+              <label class="field">
+                <span>プロテイン回数</span>
+                <input type="number" id="proteinCount" inputmode="numeric" min="0" max="20" step="1" placeholder="0">
+              </label>
+            </div>
+            <div class="flag-grid">
+              <label class="toggle"><input type="checkbox" id="diningOut"><span>会食・外食</span></label>
+              <label class="toggle"><input type="checkbox" id="alcohol"><span>飲酒</span></label>
+              <label class="toggle"><input type="checkbox" id="swelling"><span>むくみ</span></label>
+              <label class="toggle"><input type="checkbox" id="cheatDay"><span>チート日</span></label>
+            </div>
+            <button class="danger-link" id="deleteBtn" type="button">この日の記録を削除</button>
+          </div>
+        </details>
+      </form>
+    </section>
+
+    <section class="page" id="history" data-title="履歴">
+      <article class="card history-tools">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">HISTORY</p>
+            <h2>記録一覧</h2>
+          </div>
+          <span class="count-badge" id="historyCount">0件</span>
+        </div>
+        <div class="segmented wide" id="historyRange">
+          <button type="button" data-range="7">7日</button>
+          <button type="button" data-range="30" class="is-active">30日</button>
+          <button type="button" data-range="all">すべて</button>
+        </div>
+        <input class="search-input" type="search" id="search" placeholder="日付・食事・メモを検索">
+        <div class="utility-actions">
+          <button class="secondary-button" id="exportBtn" type="button">CSV出力</button>
+          <button class="secondary-button" id="copySummaryBtn" type="button">AI相談用コピー</button>
+        </div>
+      </article>
+      <div class="history-list" id="historyList"></div>
+    </section>
+
+    <section class="page" id="settings" data-title="設定">
+      <article class="card">
+        <div class="section-heading">
+          <div><p class="eyebrow">TARGETS</p><h2>目標値</h2></div>
+        </div>
+        <div class="field-grid">
+          <label class="field"><span>目標体重 <small>kg</small></span><input type="number" id="targetWeight" inputmode="decimal" step="0.1"></label>
+          <label class="field"><span>目標カロリー <small>kcal</small></span><input type="number" id="targetCalories" inputmode="numeric" step="1"></label>
+          <label class="field"><span>目標タンパク質 <small>g</small></span><input type="number" id="targetProtein" inputmode="decimal" step="0.1"></label>
+          <label class="field"><span>目標水分 <small>L</small></span><input type="number" id="targetWater" inputmode="decimal" step="0.1"></label>
+        </div>
+        <button class="primary-button" id="saveTargetsBtn" type="button">目標を保存</button>
+      </article>
+
+      <article class="card" id="templateSettings">
+        <div class="section-heading">
+          <div><p class="eyebrow">MEAL TEMPLATES</p><h2>食事テンプレ</h2></div>
+        </div>
+        <div id="templateList" class="template-list"></div>
+        <div class="template-editor">
+          <input type="text" id="templateName" placeholder="名前">
+          <div class="template-number-grid">
+            <input type="number" id="templateCalories" inputmode="numeric" placeholder="kcal">
+            <input type="number" id="templateProtein" inputmode="decimal" placeholder="P">
+            <input type="number" id="templateFat" inputmode="decimal" placeholder="F">
+            <input type="number" id="templateCarbs" inputmode="decimal" placeholder="C">
+          </div>
+          <button class="secondary-button" id="addTemplateBtn" type="button">テンプレを追加</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="section-heading">
+          <div><p class="eyebrow">APPEARANCE</p><h2>表示</h2></div>
+        </div>
+        <label class="field">
+          <span>テーマ</span>
+          <select id="theme">
+            <option value="system">端末設定に合わせる</option>
+            <option value="light">ライト</option>
+            <option value="dark">ダーク</option>
+          </select>
+        </label>
+      </article>
+
+      <article class="card" id="syncSettings">
+        <div class="section-heading">
+          <div><p class="eyebrow">GOOGLE SYNC</p><h2>Googleスプレッドシート同期</h2></div>
+        </div>
+        <label class="field">
+          <span>GAS WebアプリURL</span>
+          <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec">
+        </label>
+        <div class="field-grid">
+          <label class="field"><span>自動同期</span><select id="autoSyncEnabled"><option value="on">ON</option><option value="off">OFF</option></select></label>
+          <label class="field"><span>起動時クラウド読込</span><select id="autoLoadEnabled"><option value="off">OFF</option><option value="on">ON</option></select></label>
+          <label class="field"><span>同期間隔</span><select id="syncIntervalMinutes"><option value="1">1分</option><option value="5">5分</option><option value="10">10分</option><option value="30">30分</option></select></label>
+        </div>
+        <div class="sync-status-card" id="syncStatus">
+          <span class="status-dot"></span>
+          <div><strong>ローカル保存のみ</strong><small>GAS URLは未設定です</small></div>
+        </div>
+        <div class="utility-actions">
+          <button class="primary-button" id="saveSyncBtn" type="button">同期設定を保存</button>
+          <button class="secondary-button" id="syncNowBtn" type="button">今すぐ同期</button>
+          <button class="secondary-button" id="loadCloudBtn" type="button">クラウドから読込</button>
+        </div>
+      </article>
+
+      <article class="card danger-zone">
+        <h2>データ管理</h2>
+        <p>削除後は元に戻せません。必要なら先にCSVを出力してください。</p>
+        <button class="danger-button" id="resetBtn" type="button">すべてのローカルデータを削除</button>
+      </article>
+    </section>
+  </main>
+
+  <div class="save-dock" id="saveDock">
+    <div><strong id="saveDockTitle">今日の記録</strong><small id="saveDockStatus">未保存</small></div>
+    <button type="submit" form="entryForm" id="saveBtn">保存する</button>
+  </div>
+
+  <nav class="bottom-nav" aria-label="メインナビゲーション">
+    <button type="button" class="is-active" data-page="dashboard"><span>⌂</span><small>概要</small></button>
+    <button type="button" data-page="entry"><span>＋</span><small>記録</small></button>
+    <button type="button" data-page="history"><span>≡</span><small>履歴</small></button>
+    <button type="button" data-page="settings"><span>⚙</span><small>設定</small></button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
