@@ -10,6 +10,13 @@ const DEFAULT_TEMPLATES = [
   { id: "rice150", name: "ごはん 150g", calories: 234, protein: 3.8, fat: 0.5, carbs: 53.4 }
 ];
 
+const ACTIVITY_FLAGS = [
+  { key: "alcohol", label: "飲酒", short: "飲", color: "var(--flag-alcohol)" },
+  { key: "diningOut", label: "外食", short: "外", color: "var(--flag-dining)" },
+  { key: "strengthTraining", label: "筋トレ", short: "筋", color: "var(--flag-training)" },
+  { key: "golf", label: "ゴルフ", short: "G", color: "var(--flag-golf)" }
+];
+
 const $ = (id) => document.getElementById(id);
 const pad = (value) => String(value).padStart(2, "0");
 const todayISO = () => {
@@ -72,6 +79,8 @@ function migrateRecords(source) {
       memo: String(raw.memo || raw.conditionMemo || ""),
       diningOut: parseBoolean(raw.diningOut),
       alcohol: parseBoolean(raw.alcohol),
+      strengthTraining: parseBoolean(raw.strengthTraining),
+      golf: parseBoolean(raw.golf),
       swelling: parseBoolean(raw.swelling),
       cheatDay: parseBoolean(raw.cheatDay),
       updatedAt: raw.updatedAt || ""
@@ -220,8 +229,9 @@ function loadEntry(date = todayISO()) {
   setInputValue("memo", record.memo);
   $("diningOut").checked = Boolean(record.diningOut);
   $("alcohol").checked = Boolean(record.alcohol);
-  $("swelling").checked = Boolean(record.swelling);
-  $("cheatDay").checked = Boolean(record.cheatDay);
+  $("strengthTraining").checked = Boolean(record.strengthTraining);
+  $("golf").checked = Boolean(record.golf);
+  $("entryDetails").open = true;
 
   const editing = Boolean(records[date]);
   $("entryMode").textContent = editing ? "EDIT ENTRY" : "NEW ENTRY";
@@ -253,13 +263,15 @@ function saveEntry(event) {
     memo: $("memo").value.trim(),
     diningOut: $("diningOut").checked,
     alcohol: $("alcohol").checked,
-    swelling: $("swelling").checked,
-    cheatDay: $("cheatDay").checked,
+    strengthTraining: $("strengthTraining").checked,
+    golf: $("golf").checked,
+    swelling: Boolean(existing.swelling),
+    cheatDay: Boolean(existing.cheatDay),
     updatedAt: new Date().toISOString()
   };
   const contentKeys = [
     "weight", "calories", "protein", "steps", "water", "proteinCount", "training",
-    "meals", "memo", "diningOut", "alcohol", "swelling", "cheatDay"
+    "meals", "memo", "diningOut", "alcohol", "strengthTraining", "golf", "swelling", "cheatDay"
   ];
   if (!contentKeys.some((key) => record[key] !== null && record[key] !== "" && record[key] !== false)) {
     showToast("入力内容がありません");
@@ -359,6 +371,7 @@ function renderDashboard() {
   $("trendInsight").textContent = buildTrendInsight(desc);
 
   renderCharts();
+  renderActivityChart();
 }
 
 function buildTrendInsight(desc) {
@@ -371,12 +384,13 @@ function buildTrendInsight(desc) {
   recentStart.setDate(recentStart.getDate() - 2);
   const related = desc.filter((record) => new Date(`${record.date}T12:00:00`) >= recentStart);
   const factors = [];
-  if (related.some((record) => record.swelling || /むくみ/.test(record.memo))) factors.push("むくみ");
   if (related.some((record) => record.diningOut)) factors.push("外食");
   if (related.some((record) => record.alcohol)) factors.push("飲酒");
+  if (related.some((record) => record.strengthTraining)) factors.push("筋トレ");
+  if (related.some((record) => record.golf)) factors.push("ゴルフ");
 
   if (change >= 0.2 && factors.length) {
-    return `直近は${signed(change)}。${factors.join("・")}の記録が重なっているため、一時的な水分変動の可能性もあります。数日単位で確認してください。`;
+    return `直近は${signed(change)}。${factors.join("・")}の記録が重なっています。単日の増減だけでなく、数日単位で確認してください。`;
   }
   if (Math.abs(change) < 0.2) {
     return `直近の変化は${signed(change)}で、ほぼ横ばいです。単日の増減より7日平均を基準に見る状態です。`;
@@ -389,6 +403,7 @@ function renderCharts() {
   renderSvgChart("weightChart", "weight", chartDays, 1, "weightChartSummary", "kg");
   renderSvgChart("calorieChart", "calories", chartDays, 0, "calorieChartSummary", "kcal");
   renderSvgChart("proteinChart", "protein", chartDays, 0, "proteinChartSummary", "g");
+  renderSvgChart("stepsChart", "steps", chartDays, 0, "stepsChartSummary", "歩");
 }
 
 function renderSvgChart(svgId, key, days, digits, summaryId, unit) {
@@ -399,7 +414,8 @@ function renderSvgChart(svgId, key, days, digits, summaryId, unit) {
     .filter((point) => Number.isFinite(point.value));
   const width = 640;
   const height = 145;
-  const padX = 12;
+  const padLeft = 44;
+  const padRight = 12;
   const padTop = 12;
   const padBottom = 22;
 
@@ -416,18 +432,22 @@ function renderSvgChart(svgId, key, days, digits, summaryId, unit) {
   const spread = max - min || Math.max(Math.abs(max) * .08, 1);
   min -= spread * .18;
   max += spread * .18;
-  const x = (index) => padX + (index / Math.max(dates.length - 1, 1)) * (width - padX * 2);
+  const x = (index) => padLeft + (index / Math.max(dates.length - 1, 1)) * (width - padLeft - padRight);
   const y = (value) => padTop + ((max - value) / (max - min)) * (height - padTop - padBottom);
   const coords = points.map((point) => `${x(point.index).toFixed(1)},${y(point.value).toFixed(1)}`);
   const area = `${x(points[0].index)},${height - padBottom} ${coords.join(" ")} ${x(points.at(-1).index)},${height - padBottom}`;
   const grid = [0, .5, 1].map((ratio) => {
     const gridY = padTop + ratio * (height - padTop - padBottom);
-    return `<line class="grid-line" x1="${padX}" x2="${width - padX}" y1="${gridY}" y2="${gridY}"></line>`;
+    const axisValue = max - ratio * (max - min);
+    return `
+      <line class="grid-line" x1="${padLeft}" x2="${width - padRight}" y1="${gridY}" y2="${gridY}"></line>
+      <text class="axis-value" x="${padLeft - 7}" y="${gridY + 3}" text-anchor="end">${formatNumber(axisValue, digits)}</text>
+    `;
   }).join("");
   const dots = points.map((point) => `<circle class="series-dot" cx="${x(point.index)}" cy="${y(point.value)}" r="${days === 7 ? 3.5 : 2.2}"></circle>`).join("");
   const labels = `
-    <text class="axis-label" x="${padX}" y="${height - 5}">${dateLabel(dates[0])}</text>
-    <text class="axis-label" x="${width - padX}" y="${height - 5}" text-anchor="end">${dateLabel(dates.at(-1))}</text>
+    <text class="axis-label" x="${padLeft}" y="${height - 5}">${dateLabel(dates[0])}</text>
+    <text class="axis-label" x="${width - padRight}" y="${height - 5}" text-anchor="end">${dateLabel(dates.at(-1))}</text>
   `;
   svg.innerHTML = `${grid}<polygon class="series-area" points="${area}"></polygon><polyline class="series-line" points="${coords.join(" ")}"></polyline>${dots}${labels}`;
 
@@ -437,6 +457,44 @@ function renderSvgChart(svgId, key, days, digits, summaryId, unit) {
     ? signed(last - first, digits)
     : `平均 ${formatNumber(average(values), digits)} ${unit}`;
   $(summaryId).textContent = summary;
+}
+
+function currentWeekDates() {
+  const today = new Date(`${todayISO()}T12:00:00`);
+  const mondayOffset = (today.getDay() + 6) % 7;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - mondayOffset);
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + index);
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  });
+}
+
+function renderActivityChart() {
+  const dates = currentWeekDates();
+  const weekdays = ["月", "火", "水", "木", "金", "土", "日"];
+  $("activityWeekRange").textContent = `${dateLabel(dates[0])}〜${dateLabel(dates[6])}`;
+
+  const header = ['<div class="activity-corner"></div>']
+    .concat(weekdays.map((day, index) => `<div class="activity-day"><strong>${day}</strong><small>${dateLabel(dates[index])}</small></div>`))
+    .join("");
+  const rows = ACTIVITY_FLAGS.map((flag) => {
+    const cells = dates.map((date) => {
+      const active = Boolean(records[date]?.[flag.key]);
+      return `<div class="activity-cell ${active ? "is-active" : ""}" style="--flag-color:${flag.color}" aria-label="${date} ${flag.label}${active ? "あり" : "なし"}">${active ? flag.short : ""}</div>`;
+    }).join("");
+    return `<div class="activity-label" style="--flag-color:${flag.color}">${flag.label}</div>${cells}`;
+  }).join("");
+  $("activityChart").innerHTML = header + rows;
+
+  const summary = ACTIVITY_FLAGS
+    .map((flag) => {
+      const count = dates.filter((date) => records[date]?.[flag.key]).length;
+      return `${flag.label} ${count}日`;
+    })
+    .join(" / ");
+  $("activitySummary").textContent = summary;
 }
 
 function renderHistory() {
@@ -458,10 +516,10 @@ function renderHistory() {
 
 function historyItemHtml(record) {
   const flags = [
-    record.diningOut && "外食",
     record.alcohol && "飲酒",
-    record.swelling && "むくみ",
-    record.cheatDay && "チート"
+    record.diningOut && "外食",
+    record.strengthTraining && "筋トレ",
+    record.golf && "ゴルフ"
   ].filter(Boolean);
   const note = [record.training, record.meals, record.memo].filter(Boolean).join(" / ");
   return `
@@ -486,7 +544,7 @@ function exportCsv() {
   if (!rows.length) return showToast("出力する記録がありません");
   const headers = [
     "date", "weight", "calories", "protein", "water", "steps", "training", "meals", "memo",
-    "diningOut", "alcohol", "swelling", "proteinCount", "cheatDay", "updatedAt"
+    "diningOut", "alcohol", "strengthTraining", "golf", "swelling", "proteinCount", "cheatDay", "updatedAt"
   ];
   const cell = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
   const csv = [headers.join(","), ...rows.map((record) => headers.map((key) => cell(record[key])).join(","))].join("\r\n");
@@ -500,15 +558,16 @@ function exportCsv() {
 }
 
 async function copySummary() {
-  const rows = sortedRecords(true).slice(0, 14).reverse();
+  const recentDates = new Set(datesForDays(7));
+  const rows = sortedRecords(false).filter((record) => recentDates.has(record.date));
   if (!rows.length) return showToast("コピーする記録がありません");
   const lines = rows.map((record) => {
     const flags = [
-      record.diningOut && "外食", record.alcohol && "飲酒", record.swelling && "むくみ", record.cheatDay && "チート日"
+      record.alcohol && "飲酒", record.diningOut && "外食", record.strengthTraining && "筋トレ", record.golf && "ゴルフ"
     ].filter(Boolean).join("・") || "なし";
     return `${record.date}: 体重 ${formatNumber(record.weight, 1)}kg / ${formatNumber(record.calories)}kcal / P ${formatNumber(record.protein)}g / 歩数 ${formatNumber(record.steps)} / フラグ ${flags} / 運動 ${record.training || "-"} / 食事 ${record.meals || "-"} / 体調 ${record.memo || "-"}`;
   });
-  const text = `以下は個人のダイエット記録です。医療判断ではなく、数値の傾向、外食・飲酒・むくみとの関係、現実的な翌日の調整案を簡潔に整理してください。\n\n${lines.join("\n")}`;
+  const text = `以下は直近7日間の個人ダイエット記録です。医療判断ではなく、数値の傾向、飲酒・外食・筋トレ・ゴルフとの関係、現実的な翌日の調整案を簡潔に整理してください。\n\n${lines.join("\n")}`;
   try {
     await navigator.clipboard.writeText(text);
     showToast("AI相談用テキストをコピーしました");
@@ -587,7 +646,7 @@ function renderTemplateList() {
 function applyTheme(theme = settings.theme) {
   const dark = theme === "dark" || (theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
-  document.querySelector('meta[name="theme-color"]').content = dark ? "#111713" : "#f4f7f5";
+  document.querySelector('meta[name="theme-color"]').content = dark ? "#171214" : "#fbf6f3";
 }
 
 function saveSyncSettings() {

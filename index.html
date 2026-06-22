@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#f4f7f5">
+  <meta name="theme-color" content="#fbf6f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Daily Log">
@@ -17,7 +17,7 @@
   <header class="app-header">
     <div>
       <p class="eyebrow">PERSONAL DIET LOG</p>
-      <h1 id="pageTitle">概要</h1>
+      <h1 id="pageTitle">Home</h1>
     </div>
     <button class="sync-chip" id="syncChip" type="button" aria-label="同期設定を開く">
       <span class="status-dot" id="syncDot"></span>
@@ -26,7 +26,7 @@
   </header>
 
   <main class="app-main">
-    <section class="page is-active" id="dashboard" data-title="概要">
+    <section class="page is-active" id="dashboard" data-title="Home">
       <div class="hero-card">
         <div>
           <p class="metric-label">現在体重</p>
@@ -95,6 +95,22 @@
           <div class="chart-title"><span>タンパク質</span><span id="proteinChartSummary">--</span></div>
           <svg class="chart" id="proteinChart" role="img" aria-label="タンパク質推移グラフ"></svg>
         </div>
+        <div class="chart-block">
+          <div class="chart-title"><span>徒歩・歩数</span><span id="stepsChartSummary">--</span></div>
+          <svg class="chart" id="stepsChart" role="img" aria-label="歩数推移グラフ"></svg>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">WEEKLY FLAGS</p>
+            <h2>今週の記録</h2>
+          </div>
+          <span class="count-badge" id="activityWeekRange">--</span>
+        </div>
+        <div class="activity-chart" id="activityChart" aria-label="飲酒・外食・筋トレ・ゴルフの週次記録"></div>
+        <p class="activity-summary" id="activitySummary">記録が増えると、曜日ごとの活動が表示されます。</p>
       </article>
     </section>
 
@@ -141,9 +157,9 @@
           <p class="empty-copy" id="templateEmpty">設定で食事テンプレを登録できます。</p>
         </article>
 
-        <details class="card details-card" id="entryDetails">
+        <details class="card details-card" id="entryDetails" open>
           <summary>
-            <span><b>詳細を開く</b><small>運動・メモ・フラグ</small></span>
+            <span><b>詳細項目</b><small>運動・メモ・フラグ</small></span>
             <span class="chevron">⌄</span>
           </summary>
           <div class="details-content">
@@ -170,10 +186,10 @@
               </label>
             </div>
             <div class="flag-grid">
-              <label class="toggle"><input type="checkbox" id="diningOut"><span>会食・外食</span></label>
               <label class="toggle"><input type="checkbox" id="alcohol"><span>飲酒</span></label>
-              <label class="toggle"><input type="checkbox" id="swelling"><span>むくみ</span></label>
-              <label class="toggle"><input type="checkbox" id="cheatDay"><span>チート日</span></label>
+              <label class="toggle"><input type="checkbox" id="diningOut"><span>外食</span></label>
+              <label class="toggle"><input type="checkbox" id="strengthTraining"><span>筋トレ</span></label>
+              <label class="toggle"><input type="checkbox" id="golf"><span>ゴルフ</span></label>
             </div>
             <button class="danger-link" id="deleteBtn" type="button">この日の記録を削除</button>
           </div>
@@ -198,7 +214,7 @@
         <input class="search-input" type="search" id="search" placeholder="日付・食事・メモを検索">
         <div class="utility-actions">
           <button class="secondary-button" id="exportBtn" type="button">CSV出力</button>
-          <button class="secondary-button" id="copySummaryBtn" type="button">AI相談用コピー</button>
+          <button class="secondary-button" id="copySummaryBtn" type="button">AI相談用コピー（7日）</button>
         </div>
       </article>
       <div class="history-list" id="historyList"></div>
@@ -287,7 +303,7 @@
   </div>
 
   <nav class="bottom-nav" aria-label="メインナビゲーション">
-    <button type="button" class="is-active" data-page="dashboard"><span>⌂</span><small>概要</small></button>
+    <button type="button" class="is-active" data-page="dashboard"><span>⌂</span><small>Home</small></button>
     <button type="button" data-page="entry"><span>＋</span><small>記録</small></button>
     <button type="button" data-page="history"><span>≡</span><small>履歴</small></button>
     <button type="button" data-page="settings"><span>⚙</span><small>設定</small></button>
