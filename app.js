@@ -528,11 +528,11 @@ function historyItemHtml(record) {
         <span class="history-date">${dateLabel(record.date, true)}</span>
         <span class="history-flags">${flags.map((flag) => `<span class="mini-flag">${flag}</span>`).join("")}</span>
       </div>
-      <div class="history-values">
-        <span><small>体重</small><strong>${Number.isFinite(record.weight) ? `${formatNumber(record.weight, 1)}kg` : "--"}</strong></span>
-        <span><small>カロリー</small><strong>${Number.isFinite(record.calories) ? formatNumber(record.calories) : "--"}</strong></span>
-        <span><small>タンパク質</small><strong>${Number.isFinite(record.protein) ? `${formatNumber(record.protein)}g` : "--"}</strong></span>
-        <span><small>歩数</small><strong>${Number.isFinite(record.steps) ? formatNumber(record.steps) : "--"}</strong></span>
+      <div class="history-values" aria-label="記録の数値">
+        <span><small>体重</small><strong>${Number.isFinite(record.weight) ? `${formatNumber(record.weight, 1)} kg` : "--"}</strong></span>
+        <span><small>摂取</small><strong>${Number.isFinite(record.calories) ? `${formatNumber(record.calories)} kcal` : "--"}</strong></span>
+        <span><small>タンパク質</small><strong>${Number.isFinite(record.protein) ? `${formatNumber(record.protein)} g` : "--"}</strong></span>
+        <span><small>歩数</small><strong>${Number.isFinite(record.steps) ? `${formatNumber(record.steps)} 歩` : "--"}</strong></span>
       </div>
       ${note ? `<p class="history-note">${escapeHtml(note)}</p>` : ""}
     </button>
